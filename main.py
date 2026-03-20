@@ -3,21 +3,31 @@ import asyncio
 
 from pprint import pprint
 
+from httpx import AsyncClient
+
 from models import Story
 
-async def get_top_story_ids(ids:list[int])->list[Story | None]:
-    tasks = []
-    for story_id in ids:
-        tasks.append(asyncio.to_thread(hn_client.get_story_by_id, story_id))
+async def get_top_story_ids(ids:list[int])->list[Story | None]:  
     
-    return await asyncio.gather(*tasks)
+    async with AsyncClient() as cli:
+        tasks = [
+            asyncio.create_task(hn_client.get_story_by_id(cli, story_id))
+            for story_id in ids
+        ]   
         
+        return await asyncio.gather(*tasks)
+        
+async def loop():
+    ids = await hn_client.get_topstories_id(5)
+    
+    stories  = await get_top_story_ids(ids)
+    
+    pprint(stories)
+    
+
 
 if __name__ == "__main__":
-    ids = hn_client.get_topstories_id(5)
-
-    stories = asyncio.run(get_top_story_ids(ids))
-
-    pprint(stories)
+    asyncio.run(loop())
+    
 
 
