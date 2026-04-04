@@ -3,15 +3,31 @@ from httpx import _exceptions as httpx_exc
 
 from typing import Any
 
-from models import Story
-
+from app.models import Story
 
 class HNClient:
-    
+    """
+    Класс для работы с api Hacker News
+    """
     def __init__(self, client: AsyncClient):
         self.client = client
 
-    async def get_topstories_id(self, count: int = 10) -> list[int]:
+    async def get_topstories_ids(self, count: int = 10) -> list[int]:
+        """
+        Возвращает первые _count_ id историй с Hacker News
+
+        Args:
+            _count_ (int, optional): Количество id которые надо вернуть. Дефолт 10.
+
+        Raises:
+            TypeError: _count_ не int
+            ValueError: _count_ <= 0
+            TypeError: Ответ пришел не в "application/json"
+            TypeError: Вернулся не list, а что-то другое
+
+        Returns:
+            list[int]: Список top истоий длинной в _ount_
+        """
         try:
             if not isinstance(count, int):
                 raise TypeError(f"Expected type is 'int' not {type(count)}")
@@ -36,12 +52,12 @@ class HNClient:
         except httpx_exc.RequestError:
             raise
 
-    async def _fetch_story_json(self, id: int) -> dict[str, Any]:
+    async def _fetch_story_json(self, story_id: int) -> dict[str, Any]:
         try:
-            if not isinstance(id, int):
-                raise TypeError(f"Expected type is 'int' not {type(id)}")
+            if not isinstance(story_id, int):
+                raise TypeError(f"Expected type is 'int' not {type(story_id)}")
             
-            response = await self.client.get(f"https://hacker-news.firebaseio.com/v0/item/{id}.json", timeout=10)
+            response = await self.client.get(f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json", timeout=10)
             response.raise_for_status()
             content_type = response.headers.get("Content-Type", "")
 
@@ -58,8 +74,17 @@ class HNClient:
         except httpx_exc.RequestError:
             raise
 
-    async def get_story_by_id(self, id: int) -> Story | None:
-        data = await self._fetch_story_json(id)
+    async def get_story_by_id(self, story_id: int) -> Story | None:
+        """Возвращает Story по id, если история некорректная
+        то возвращает None
+
+        Args:
+            story_id (int): _id_ истории, которую хотим получить
+
+        Returns:
+            Story|None: Валидная история или None
+        """
+        data = await self._fetch_story_json(story_id)
         return self._parse_story(data)        
     
     @staticmethod
