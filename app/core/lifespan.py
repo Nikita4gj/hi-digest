@@ -1,9 +1,8 @@
-from app.clients import HNClient
-from httpx import AsyncClient
-
 from contextlib import asynccontextmanager
-
+from httpx import AsyncClient
 from fastapi import FastAPI
+
+from app.clients import HNClient
 
 @asynccontextmanager 
 async def lifespan(app: FastAPI):
